@@ -15,5 +15,14 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname, 'src') // 确保 @ 指向 src 目录
     }
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://198.18.9.21:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
+    }
   }
 })

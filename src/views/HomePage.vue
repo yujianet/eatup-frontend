@@ -16,7 +16,7 @@
             <van-image
                 width="80"
                 height="80"
-                :src="API_BASE_URL + '/' + food.photo_path"
+                :src="'/api' + food.photo_path"
                 fit="cover"
             />
             <!-- 中间文字 -->
@@ -63,7 +63,7 @@ const isLoading = ref(false)
 
 const fetchFoodList = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/foods/`)
+    const response = await axios.get(`/api/foods/`)
     console.log('获取食物列表成功:', response)
     return response.data.data
   } catch (error) {

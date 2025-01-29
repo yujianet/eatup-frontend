@@ -183,21 +183,21 @@ const formData = ref<FoodFormData>({
 // 提交表单
 const onSubmit = async () => {
   try {
-    isSubmitting.value = true
+    isSubmitting.value = true;
 
     // 1. 拍照
-    const photoBlob = await takePhoto()
+    const photoBlob = await takePhoto();
     // 2. 上传图片（模拟）
-    formData.value.photo_path = await uploadPhoto(photoBlob)
+    formData.value.photo_path = await uploadPhoto(photoBlob);
     // 3. 提交数据到后端
-    await axios.post(`${API_BASE_URL}/foods/`, formData.value)
+    await axios.post('/api/foods/', formData.value);
 
-    showToast('保存成功')
-    await router.push('/')
+    showToast('保存成功');
+    await router.push('/');
   } catch (error) {
-    showToast('保存失败，请重试')
+    showToast('保存失败，请重试');
   } finally {
-    isSubmitting.value = false
+    isSubmitting.value = false;
   }
 }
 
@@ -223,12 +223,12 @@ const uploadPhoto = async (blob: Blob): Promise<string> => {
   formData.append('file', blob);
 
   try {
-    const response = await axios.post(`${API_BASE_URL}/foods/upload`, formData, {
+    const response = await axios.post('/api/foods/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
     });
-    console.log(response.data)
+    console.log(response.data);
     return response.data.path;
   } catch (error) {
     console.error('图片上传失败:', error);
