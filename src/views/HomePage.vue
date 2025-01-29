@@ -33,15 +33,19 @@
       </van-list>
     </van-pull-refresh>
 
-    <!-- 侧滑删除后，显示浮动按钮，撤销删除 -->
-    <van-floating-bubble v-if="deletedFoods.length > 0" @click="undoDelete" class="undo-button" style="position: fixed; bottom: 20px; left: 20px;">
+    <!-- 浮动按钮，撤销删除 -->
+    <van-floating-bubble
+        v-model:offset="undoDeleteButtonOffset"
+        axis="lock"
+        @click="undoDelete"
+        class="undo-button"
+        :style="{ visibility: deletedFoods.length > 0 ? 'visible' : 'hidden' }">
       <van-icon name="revoke" size="24" />
     </van-floating-bubble>
 
     <!-- 右下角浮动按钮 -->
     <van-floating-bubble
-        axis="xy"
-        magnetic="x"
+        axis="lock"
         class="add-button"
         @click="router.push('/add')"
     >
@@ -108,6 +112,7 @@ const deleteFood = async (foodId: number) => {
   }
 }
 
+const undoDeleteButtonOffset = ref({ x: 24, y: -1 })
 // 新增：撤销删除操作
 const undoDelete = async () => {
   if (deletedFoods.value.length > 0) {
