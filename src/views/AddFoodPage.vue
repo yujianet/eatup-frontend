@@ -85,7 +85,6 @@ import {useRouter} from 'vue-router'
 import axios from 'axios'
 import {showToast} from 'vant'
 import type {CategoryData, FoodFormData} from "./types.ts";
-import { API_BASE_URL } from '../config/index.ts'
 
 // 修改后的后端地址配置
 const categories = ref<CategoryData>({})
@@ -93,7 +92,7 @@ const categoriesLoading = ref(true) // 加载状态
 
 async function fetchCategories() {
   try {
-    const response = await axios.get(`${API_BASE_URL}/categories`)
+    const response = await axios.get(`/api/categories`)
     categories.value = response.data.categories
   } catch (error) {
     console.error('获取分类失败:', error)
@@ -292,10 +291,6 @@ onUnmounted(cleanupCamera)
 .overlay-text {
   text-align: center;
   color: white;
-}
-
-.expiry-picker {
-  margin: 16px 0;
 }
 
 .submit-button {
