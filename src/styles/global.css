@@ -10,3 +10,13 @@ body {
     padding: 0;
     font-family: Arial, sans-serif;
 }
+
+/* 移动端基础字号 */
+html {
+    font-size: 14px;
+}
+
+/* 列表项点击反馈 */
+.van-cell:active {
+    background-color: #f5f5f5;
+}

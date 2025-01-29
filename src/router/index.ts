@@ -12,8 +12,14 @@ const router = createRouter({
             path: '/add',
             name: 'AddFood',
             component: () => import('@/views/AddFoodPage.vue') // 稍后创建
+        // },
+        // {
+        //     // 添加 404 处理
+        //     path: '/:pathMatch(.*)*',
+        //     component: () => import('@/views/NotFound.vue')
         }
     ]
 })
+
 
 export default router
