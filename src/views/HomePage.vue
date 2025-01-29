@@ -9,8 +9,7 @@
           finished-text="没有更多了"
           @load="onLoad"
       >
-        <!-- TODO 将 cell 换成 SwipeCell 支持侧滑删除 -->
-        <van-cell v-for="food in foodList" :key="food.id">
+        <van-swipe-cell v-for="food in foodList" :key="food.id">
           <div class="food-item">
             <!-- 左侧图片 -->
             <van-image
@@ -27,10 +26,18 @@
               </div>
             </div>
           </div>
-        </van-cell>
+          <template #right>
+            <van-button square text="删除" type="danger" class="delete-button" @click="deleteFood(food.id)" />
+          </template>
+        </van-swipe-cell>
       </van-list>
     </van-pull-refresh>
-    <!-- TODO 侧滑删除后，显示浮动按钮，撤销删除，仅前端保存状态即可 -->
+
+    <!-- 侧滑删除后，显示浮动按钮，撤销删除 -->
+    <van-floating-bubble v-if="deletedFoods.length > 0" @click="undoDelete" class="undo-button" style="position: fixed; bottom: 20px; left: 20px;">
+      <van-icon name="revoke" size="24" />
+    </van-floating-bubble>
+
     <!-- 右下角浮动按钮 -->
     <van-floating-bubble
         axis="xy"
@@ -48,18 +55,18 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import 'vant/es/floating-bubble/style'
 import axios from 'axios'
-import { API_BASE_URL } from '../config/index.ts'
-import type {FoodItem} from "../views/types.ts";
+import type { FoodItem } from "../views/types.ts";
 
 // 路由实例
 const router = useRouter()
 
 // 食物列表数据（暂用模拟数据，后续替换为 API）
-
 const foodList = ref<FoodItem[]>([])
 const loading = ref(false)
 const finished = ref(false)
 const isLoading = ref(false)
+// 保存被删除的食物项
+const deletedFoods = ref<FoodItem[]>([])
 
 const fetchFoodList = async () => {
   try {
@@ -82,8 +89,41 @@ const onLoad = async () => {
 const onRefresh = async () => {
   foodList.value = []
   finished.value = false
-  await onLoad()
+  loading.value = false // 重置加载状态，让 van-list 自动触发 onLoad
   isLoading.value = false
+}
+
+// 删除食物时将食物项添加到 deletedFoods 数组中
+const deleteFood = async (foodId: number) => {
+  try {
+    await axios.delete(`/api/foods/${foodId}`)
+    const deletedFood = foodList.value.find(food => food.id === foodId)
+    if (deletedFood) {
+      deletedFoods.value.push(deletedFood)
+    }
+    foodList.value = foodList.value.filter(food => food.id !== foodId)
+    console.log('删除食物成功:', foodId)
+  } catch (error) {
+    console.error('删除食物失败:', error)
+  }
+}
+
+// 新增：撤销删除操作
+const undoDelete = async () => {
+  if (deletedFoods.value.length > 0) {
+    const lastDeletedFood = deletedFoods.value.pop()
+    if (lastDeletedFood) {
+      try {
+        await axios.put(`/api/foods/${lastDeletedFood.id}/undo_delete`)
+        foodList.value.push(lastDeletedFood)
+        console.log('撤销删除成功:', lastDeletedFood.id)
+      } catch (error) {
+        console.error('撤销删除失败:', error)
+        // 如果撤销失败，将食物项重新添加到 deletedFoods 数组中
+        deletedFoods.value.push(lastDeletedFood)
+      }
+    }
+  }
 }
 </script>
 
@@ -112,5 +152,14 @@ const onRefresh = async () => {
 .add-button {
   --van-floating-bubble-size: 56px;
   --van-floating-bubble-background: #1989fa;
+}
+
+.delete-button {
+  height: 100%;
+}
+
+.undo-button {
+  --van-floating-bubble-size: 56px;
+  --van-floating-bubble-background: #ff976a;
 }
 </style>
