@@ -112,7 +112,13 @@ let mediaStream: MediaStream | null = null
 // 初始化摄像头
 async function initCamera() {
   try {
-    mediaStream = await navigator.mediaDevices.getUserMedia({ video: true })
+    // 尝试优先使用前置摄像头
+    const constraints = {
+      video: {
+        facingMode: "user" // "user" 表示前置摄像头，"environment" 表示后置摄像头
+      }
+    }
+    mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
     if (videoRef.value) {
       videoRef.value.srcObject = mediaStream
     }
