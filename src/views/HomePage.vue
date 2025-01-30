@@ -12,18 +12,18 @@
         <van-swipe-cell v-for="food in foodList" :key="food.id">
           <div class="food-item">
             <!-- 左侧图片 -->
-            <van-image
-                width="80"
-                height="80"
+            <van-image class="food-image"
+                width="160"
+                height="120"
                 :src="'/api' + food.photo_path"
                 fit="cover"
+                radius="8px"
             />
             <!-- 中间文字 -->
-            <div class="food-info">
-              <div class="name">{{ food.name }}</div>
-              <div class="remaining-days">
-                剩余天数：{{ food.remaining_days }} 天
-              </div>
+            <div class="main-page-food-name">{{ food.name }}</div>
+            <!-- 右侧剩余天数 -->
+            <div class="remaining-days">
+              {{ `还剩 ${food.remaining_days} 天` }}
             </div>
           </div>
           <template #right>
@@ -74,7 +74,12 @@ const deletedFoods = ref<FoodItem[]>([])
 
 const fetchFoodList = async () => {
   try {
-    const response = await axios.get(`/api/foods/`)
+    const response = await axios.get(`/api/foods/`, {
+      params: {
+        sort_by: 'remaining_days',
+        order: 'asc' // 可以根据需要调整为 'desc' 以实现降序排序
+      }
+    })
     console.log('获取食物列表成功:', response)
     return response.data.data
   } catch (error) {
@@ -133,25 +138,28 @@ const undoDelete = async () => {
 </script>
 
 <style scoped>
-.food-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+
+
+.food-image {
+  margin-left: 6px;
 }
 
-.food-info {
-  flex: 1;
-}
-
-.name {
-  font-size: 16px;
-  font-weight: bold;
+.main-page-food-name {
+  flex-grow: 1;
+  font-size: 20px;
   margin-bottom: 8px;
 }
 
 .remaining-days {
-  color: #f44;
-  font-size: 14px;
+  display: inline-flex;
+  flex-shrink: 0;
+  margin-left: 10px;
+  padding: 5px 10px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid #517451;
+  border-radius: 8px;
+  color: #517451;
+  font-size: 16px;
 }
 
 .add-button {
@@ -167,4 +175,12 @@ const undoDelete = async () => {
   --van-floating-bubble-size: 56px;
   --van-floating-bubble-background: #ff976a;
 }
+
+.food-item {
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 </style>

@@ -1,9 +1,11 @@
 // src/types.ts
 
+import type {Numeric} from "vant/es/utils";
+
 export interface FoodFormData {
-    name: string
-    category_large: string
-    category_small: string
+    name: Numeric
+    category_large: Numeric
+    category_small: Numeric
     expiry_days: number
     photo_path: string
 }

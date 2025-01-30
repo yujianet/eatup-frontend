@@ -15,52 +15,37 @@
 
     <!-- 表单区域 -->
     <van-form @submit="onSubmit" class="form-container">
-      <!-- 食物名称 -->
-      <van-field
-          v-model="formData.name"
-          name="name"
-          label="食物名称"
-          placeholder="请输入名称"
-          :rules="[{ required: true, message: '名称不能为空' }]"
-      />
-
       <!-- 分类选择 -->
-      <van-field
-          v-model="formData.category_small"
-          is-link
-          readonly
-          label="分类"
-          placeholder="选择分类"
-          @click="onCategoryFieldClick"
-      />
-      <van-popup v-model:show="showCategoryPicker" destroy-on-close round position="bottom">
-        <template v-if="categoriesLoading">
-          <div style="padding: 20px; text-align: center">
-            <van-loading size="24px">加载分类中...</van-loading>
-          </div>
-        </template>
-        <template v-else-if="Object.keys(categories).length === 0">
-          <div style="padding: 20px; color: var(--van-gray-6); text-align: center">
-            <van-icon name="warning" size="24px" />
-            <p>暂无分类数据</p>
-          </div>
-        </template>
-        <van-picker
-            v-else
-            title="选择分类"
+        <van-picker class="category-picker"
             :columns="pickerColumns"
-            @cancel="showCategoryPicker = false"
-            @confirm="onCategoryPickerConfirm"
+            :show-toolbar="false"
+            visible-option-num="5"
+            @change="onPickerChange"
+            swipe-duration="200"
         />
-      </van-popup>
+
+      <!-- 食物名称和保质期显示 -->
+      <div class="name-and-expiry">
+        <div class="food-name">
+          <van-field
+              v-model="formData.name"
+              name="name"
+              label="食物名称"
+              placeholder="请输入名称"
+              :rules="[{ required: true, message: '名称不能为空' }]"
+          />
+        </div>
+        <div class="expiry-label">{{ `保质期 ${days_text}` }}</div>
+      </div>
 
       <!-- 保质期选择 -->
-      <van-slider
-          v-model="formData.expiry_days">
-        <template #button>
-          <div class="slider-button">{{ formData.expiry_days }}</div>
-        </template>
-      </van-slider>
+      <div style="padding-left:10px; padding-right:10px">
+        <van-slider class="slider"
+            v-model="sliderValue"
+            :max="sliderValueToDays.length-1"
+            @update:model-value="onSliderChange"
+        />
+      </div>
 
       <!-- 保存按钮 -->
       <div class="submit-button">
@@ -83,25 +68,8 @@
 import {computed, onMounted, onUnmounted, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import axios from 'axios'
-import {showToast} from 'vant'
+import {type PickerChangeEventParams, showToast} from 'vant'
 import type {CategoryData, FoodFormData} from "./types.ts";
-
-// 修改后的后端地址配置
-const categories = ref<CategoryData>({})
-const categoriesLoading = ref(true) // 加载状态
-
-async function fetchCategories() {
-  try {
-    const response = await axios.get(`/api/categories`)
-    categories.value = response.data.categories
-  } catch (error) {
-    console.error('获取分类失败:', error)
-    showToast('分类加载失败')
-    categories.value = {} // 清空数据
-  } finally {
-    categoriesLoading.value = false
-  }
-}
 
 // --- 摄像头逻辑 ---
 const videoRef = ref<HTMLVideoElement | null>(null)
@@ -111,10 +79,9 @@ let mediaStream: MediaStream | null = null
 // 初始化摄像头
 async function initCamera() {
   try {
-    // 尝试优先使用前置摄像头
     const constraints = {
       video: {
-        facingMode: "user" // "user" 表示前置摄像头，"environment" 表示后置摄像头
+        facingMode: "environment" // "user" 表示前置摄像头，"environment" 表示后置摄像头
       }
     }
     mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
@@ -134,7 +101,7 @@ function cleanupCamera() {
   }
 }
 
-// --- 表单逻辑 ---
+// --- 页面主体逻辑 ---
 const router = useRouter()
 
 // 返回首页的方法
@@ -142,40 +109,111 @@ const goBack = () => {
   router.push('/')
 }
 
-const isSubmitting = ref(false)
+// --- 分类展示逻辑 ---
+const categories = ref<CategoryData>({})
+const categoriesLoading = ref(true) // 加载状态
 
-// 大小分类选项：将对象键转换为 { text, value, children }
+async function fetchCategories() {
+  try {
+    const response = await axios.get(`/api/categories`)
+    categories.value = response.data.categories
+  } catch (error) {
+    console.error('获取分类失败:', error)
+    showToast('分类加载失败')
+    categories.value = {} // 清空数据
+  } finally {
+    categoriesLoading.value = false
+  }
+}
 const pickerColumns = computed(() => {
+  // 大小分类选项：将对象键转换为 { text, value, children }
   // 第一列：大分类
   return Object.keys(categories.value).map((key) => ({
     text: key,
     value: key,
     children: Object.keys(categories.value[key]).map((smallKey) => ({
-      text: smallKey,
+      // 第二列：小分类
+      text: `${smallKey}(${categories.value[key][smallKey]})`,
       value: smallKey
     }))
   }))
 })
-
-const showCategoryPicker = ref(false);
-function onCategoryFieldClick() {
-  showCategoryPicker.value = true
-  if (!categoriesLoading.value && Object.keys(categories.value).length != 0) return
-  fetchCategories()
+const onPickerChange = (params: PickerChangeEventParams) => {
+  let [cate_l, cate_s] = params.selectedValues
+  formData.value.category_large = cate_l
+  formData.value.category_small = cate_s
+  formData.value.name = cate_s
+  const expiry_days = categories.value[cate_l][cate_s]
+  formData.value.expiry_days = expiry_days
+  let [lastVal, lastDays, finnalVal] = [0,0,0]
+  for (let val=0;val<sliderValueToDays.length;val++) {
+    let days = sliderValueToDays[val]
+    let prevDistance = Math.abs(lastDays - days )
+    let nextDistance = Math.abs(days - expiry_days)
+    finnalVal = prevDistance < nextDistance ? lastVal : val
+    if (days >= expiry_days) {break}
+    [lastVal, lastDays] = [val, days]
+  }
+  sliderValue.value = finnalVal
+  showToast('当前值：' + finnalVal);
 }
-function onCategoryPickerConfirm(eventData: {selectedValues: string[]}) {
-  showCategoryPicker.value = false
-  // console.log(eventData.selectedValues)
-  // console.log(typeof eventData.selectedValues)
-  const [cl, cs] = eventData.selectedValues
-  formData.value.category_large = cl
-  formData.value.category_small = cs
-  formData.value.name = cs + "-自定义"
-  formData.value.expiry_days = categories.value[cl][cs]
-  // console.log(formData.value.expiry_days)
+
+// --- 保质期标签 ---
+const days_text = computed(() => {
+  const totalDays = formData.value.expiry_days
+
+  if (totalDays <= 30) {
+    return `${totalDays} 天`;
+  } else if (totalDays > 30 && totalDays < 365) {
+    const months = totalDays / 30.4;
+    let integerMonths = Math.floor(months);
+    const decimalPart = months - integerMonths;
+
+    let fractionalPart = '';
+    if (decimalPart > 0.75) {
+      integerMonths++
+    } else if (decimalPart > 0.25) {
+      fractionalPart = '.5'
+    }
+
+    return `${integerMonths}${fractionalPart} 个月`
+  } else {
+    const years = Math.floor(totalDays / 365);
+    const remainingDays = totalDays % 365;
+    const months = Math.floor(remainingDays / 30.4);
+    if (months == 0) {
+      return `${years} 年`
+    }
+    if (months == 6) {
+      return `${years} 年半`
+    }
+    return `${years} 年 ${months} 个月`;
+  }
+});
+
+// --- 保质期拖动条 ---
+const sliderValue = ref(1)
+const sliderValueToDays = [
+    4,   // 4 天
+    7,   // 7 天
+    10,  // 10 天
+    14,  // 14 天
+    31,  // 1 个月
+    61,  // 2 个月
+    92,  // 3 个月
+    183, // 6 个月
+    274, // 9 个月
+    365, // 1 年
+    548, // 1 年半
+    730, // 2 年
+]
+const onSliderChange = (value: number) => {
+  sliderValue.value = value
+  formData.value.expiry_days = sliderValueToDays[value] || 1
 }
 
 
+// --- 提交表单 ---
 const formData = ref<FoodFormData>({
   name: '',
   category_large: '',
@@ -183,9 +221,7 @@ const formData = ref<FoodFormData>({
   expiry_days: 1,
   photo_path: ''
 })
-
-
-// 提交表单
+const isSubmitting = ref(false)
 const onSubmit = async () => {
   try {
     isSubmitting.value = true;
@@ -251,16 +287,6 @@ onUnmounted(cleanupCamera)
 
 <style scoped>
 
-.slider-button {
-  width: 26px;
-  color: #fff;
-  font-size: 10px;
-  line-height: 18px;
-  text-align: center;
-  background-color: var(--van-primary-color);
-  border-radius: 100px;
-}
-
 .add-food-page {
   padding: 12px;
 }
@@ -291,6 +317,41 @@ onUnmounted(cleanupCamera)
 .overlay-text {
   text-align: center;
   color: white;
+}
+
+.name-and-expiry {
+  display: flex;
+  align-items: center;
+}
+
+.food-name {
+  margin-left: 10px; /* 外边距 */
+  flex-grow: 1;
+}
+
+.expiry-label {
+  display: inline-flex;
+  flex-shrink: 0;
+  margin-left: 10px;
+  padding: 5px 10px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid #517451;
+  border-radius: 8px;
+  color: #517451;
+  font-size: 14px;
+}
+
+.category-picker {
+  border: 1px solid #ccc; /* 浅灰色边框 */
+  border-radius: 8px; /* 圆角 */
+  padding: 10px; /* 内边距 */
+  margin: 10px; /* 外边距 */
+}
+
+.slider {
+  display: inline-flex;
+  flex-shrink: 0;
+  margin-top: 16px;
 }
 
 .submit-button {
