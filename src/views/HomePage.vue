@@ -12,17 +12,32 @@
         <van-swipe-cell v-for="food in foodList" :key="food.id">
           <div class="food-item">
             <!-- 左侧图片 -->
-            <van-image class="food-image"
+            <div class="food-image">
+              <GlowBox v-if="food.remaining_days <= 2"
+                :border-width="3"
+                :gradient-colors="['rgba(255,255,255,0)', '#ff2770', 'rgba(255,255,255,0)']"
+                :animation-duration="3"
+              >
+                <van-image
                 width="160"
                 height="120"
                 :src="'/api' + food.photo_path"
                 fit="cover"
                 radius="8px"
-            />
+                />
+              </GlowBox>
+              <van-image v-else
+                width="160"
+                height="120"
+                :src="'/api' + food.photo_path"
+                fit="cover"
+                radius="8px"
+              />
+            </div>
             <!-- 中间文字 -->
             <div class="main-page-food-name">{{ food.name }}</div>
             <!-- 右侧剩余天数 -->
-            <div class="remaining-days">
+            <div :class="{ 'remaining-days': true, 'remaining-days-red': food.remaining_days <= 2 }">
               {{ `还剩 ${food.remaining_days} 天` }}
             </div>
           </div>
@@ -60,6 +75,8 @@ import { useRouter } from 'vue-router'
 import 'vant/es/floating-bubble/style'
 import axios from 'axios'
 import type { FoodItem } from "../views/types.ts";
+import GlowBox from '../component/GlowBox.vue'
+
 
 // 路由实例
 const router = useRouter()
@@ -162,6 +179,11 @@ const undoDelete = async () => {
   font-size: 16px;
 }
 
+.remaining-days-red {
+  color: red;
+  border-color: red;
+}
+
 .add-button {
   --van-floating-bubble-size: 56px;
   --van-floating-bubble-background: #1989fa;
@@ -182,5 +204,4 @@ const undoDelete = async () => {
   align-items: center;
   gap: 12px;
 }
-
 </style>
