@@ -155,7 +155,7 @@ const onPickerChange = (params: PickerChangeEventParams) => {
     [lastVal, lastDays] = [val, days]
   }
   sliderValue.value = finnalVal
-  showToast('当前值：' + finnalVal);
+  //showToast('当前值：' + finnalVal);
 }
 
 // --- 保质期标签 ---
