@@ -296,8 +296,8 @@ onUnmounted(cleanupCamera)
   width: 100%;
   max-width: 500px;
   height: 100%;
-  max-height: 500px;
-  border-radius: 8px;
+  max-height: 500vh;
+  border-radius: 16px;
   overflow: hidden;
   margin: 0 auto; /* 居中显示 */
 }
