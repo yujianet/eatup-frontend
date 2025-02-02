@@ -7,7 +7,8 @@ build
 
 # 忽略 VS Code 和 Dev Container 配置
 .vscode
-.devcontainer
+.idea
+.run
 
 # 忽略 Git 相关文件
 .git

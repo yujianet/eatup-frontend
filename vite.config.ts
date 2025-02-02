@@ -18,6 +18,8 @@ export default defineConfig({
     }
   },
   server: {
+    host: '0.0.0.0',
+    allowedHosts: ['eatup-test.i.yujianet.cn', 'eatup.i.yujianet.cn'],
     proxy: {
       '/api': {
         target: 'http://198.18.9.21:8000',

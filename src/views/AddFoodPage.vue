@@ -19,7 +19,7 @@
         <van-picker class="category-picker"
             :columns="pickerColumns"
             :show-toolbar="false"
-            visible-option-num="5"
+            visible-option-num="4"
             @change="onPickerChange"
             swipe-duration="200"
         />
@@ -294,9 +294,9 @@ onUnmounted(cleanupCamera)
 .camera-preview {
   position: relative;
   width: 100%;
-  max-width: 500px;
+  max-width: 95vw;
   height: 100%;
-  max-height: 500vh;
+  max-height: 40vh;
   border-radius: 16px;
   overflow: hidden;
   margin: 0 auto; /* 居中显示 */
