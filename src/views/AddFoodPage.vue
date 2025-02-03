@@ -1,13 +1,13 @@
 <template>
   <div class="add-food-page">
     <!-- 返回按钮 -->
-    <van-button icon="arrow-left" class="back-button" @click="goBack" />
+    <van-button icon="arrow-left" class="back-button" @click="goBack"/>
     <!-- 摄像头预览区域 -->
     <div class="camera-preview">
       <video ref="videoRef" class="video-stream" autoplay muted playsinline></video>
       <van-overlay :show="!hasCameraPermission" class="overlay">
         <div class="overlay-text">
-          <van-icon name="warning" size="24" />
+          <van-icon name="warning" size="24"/>
           <p>摄像头权限未开启</p>
         </div>
       </van-overlay>
@@ -15,15 +15,6 @@
 
     <!-- 表单区域 -->
     <van-form @submit="onSubmit" class="form-container">
-      <!-- 分类选择 -->
-        <van-picker class="category-picker"
-            :columns="pickerColumns"
-            :show-toolbar="false"
-            visible-option-num="4"
-            @change="onPickerChange"
-            swipe-duration="200"
-        />
-
       <!-- 食物名称和保质期显示 -->
       <div class="name-and-expiry">
         <div class="food-name">
@@ -41,9 +32,9 @@
       <!-- 保质期选择 -->
       <div style="padding-left:10px; padding-right:10px">
         <van-slider class="slider"
-            v-model="sliderValue"
-            :max="sliderValueToDays.length-1"
-            @update:model-value="onSliderChange"
+                    v-model="sliderValue"
+                    :max="sliderValueToDays.length-1"
+                    @update:model-value="onSliderChange"
         />
       </div>
 
@@ -68,8 +59,8 @@
 import {computed, onMounted, onUnmounted, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import axios from 'axios'
-import {type PickerChangeEventParams, showToast} from 'vant'
-import type {CategoryData, FoodFormData} from "./types.ts";
+import {showToast} from 'vant'
+import type {FoodFormData} from "./types.ts";
 
 // --- 摄像头逻辑 ---
 const videoRef = ref<HTMLVideoElement | null>(null)
@@ -109,55 +100,6 @@ const goBack = () => {
   router.push('/')
 }
 
-// --- 分类展示逻辑 ---
-const categories = ref<CategoryData>({})
-const categoriesLoading = ref(true) // 加载状态
-
-async function fetchCategories() {
-  try {
-    const response = await axios.get(`/api/categories`)
-    categories.value = response.data.categories
-  } catch (error) {
-    console.error('获取分类失败:', error)
-    showToast('分类加载失败')
-    categories.value = {} // 清空数据
-  } finally {
-    categoriesLoading.value = false
-  }
-}
-const pickerColumns = computed(() => {
-  // 大小分类选项：将对象键转换为 { text, value, children }
-  // 第一列：大分类
-  return Object.keys(categories.value).map((key) => ({
-    text: key,
-    value: key,
-    children: Object.keys(categories.value[key]).map((smallKey) => ({
-      // 第二列：小分类
-      text: `${smallKey}(${categories.value[key][smallKey]})`,
-      value: smallKey
-    }))
-  }))
-})
-const onPickerChange = (params: PickerChangeEventParams) => {
-  let [cate_l, cate_s] = params.selectedValues
-  formData.value.category_large = cate_l
-  formData.value.category_small = cate_s
-  formData.value.name = cate_s
-  const expiry_days = categories.value[cate_l][cate_s]
-  formData.value.expiry_days = expiry_days
-  let [lastVal, lastDays, finnalVal] = [0,0,0]
-  for (let val=0;val<sliderValueToDays.length;val++) {
-    let days = sliderValueToDays[val]
-    let prevDistance = Math.abs(lastDays - days )
-    let nextDistance = Math.abs(days - expiry_days)
-    finnalVal = prevDistance < nextDistance ? lastVal : val
-    if (days >= expiry_days) {break}
-    [lastVal, lastDays] = [val, days]
-  }
-  sliderValue.value = finnalVal
-  //showToast('当前值：' + finnalVal);
-}
-
 // --- 保质期标签 ---
 const days_text = computed(() => {
   const totalDays = formData.value.expiry_days
@@ -194,30 +136,43 @@ const days_text = computed(() => {
 // --- 保质期拖动条 ---
 const sliderValue = ref(1)
 const sliderValueToDays = [
-    4,   // 4 天
-    7,   // 7 天
-    10,  // 10 天
-    14,  // 14 天
-    31,  // 1 个月
-    61,  // 2 个月
-    92,  // 3 个月
-    183, // 6 个月
-    274, // 9 个月
-    365, // 1 年
-    548, // 1 年半
-    730, // 2 年
+  4,   // 4 天
+  7,   // 7 天
+  10,  // 10 天
+  14,  // 14 天
+  31,  // 1 个月
+  61,  // 2 个月
+  92,  // 3 个月
+  183, // 6 个月
+  274, // 9 个月
+  365, // 1 年
+  548, // 1 年半
+  730, // 2 年
 ]
 const onSliderChange = (value: number) => {
   sliderValue.value = value
   formData.value.expiry_days = sliderValueToDays[value] || 1
+}
+const onExpiryDaysChange = (expiry_days: number) => {
+  let [lastVal, lastDays, finalVal] = [0, 0, 0]
+  for (let val = 0; val < sliderValueToDays.length; val++) {
+    let days = sliderValueToDays[val]
+    let prevDistance = Math.abs(lastDays - days)
+    let nextDistance = Math.abs(days - expiry_days)
+    finalVal = prevDistance < nextDistance ? lastVal : val
+    if (days >= expiry_days) {
+      break
+    }
+    [lastVal, lastDays] = [val, days]
+  }
+  sliderValue.value = finalVal
+  //showToast('当前值：' + finalVal);
 }
 
 
 // --- 提交表单 ---
 const formData = ref<FoodFormData>({
   name: '',
-  category_large: '',
-  category_small: '',
   expiry_days: 1,
   photo_path: ''
 })
@@ -279,8 +234,7 @@ const uploadPhoto = async (blob: Blob): Promise<string> => {
 
 // 生命周期
 onMounted(() => {
-      initCamera()
-      fetchCategories()
+  initCamera()
 })
 onUnmounted(cleanupCamera)
 </script>
@@ -339,13 +293,6 @@ onUnmounted(cleanupCamera)
   border-radius: 8px;
   color: #517451;
   font-size: 14px;
-}
-
-.category-picker {
-  border: 1px solid #ccc; /* 浅灰色边框 */
-  border-radius: 8px; /* 圆角 */
-  padding: 10px; /* 内边距 */
-  margin: 10px; /* 外边距 */
 }
 
 .slider {

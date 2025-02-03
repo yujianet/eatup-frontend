@@ -13,7 +13,7 @@
           <div class="food-item">
             <!-- 左侧图片 -->
             <div class="food-image">
-              <GlowBox v-if="food.remaining_days <= 2"
+              <GlowBox v-if="food.remaining_days && food.remaining_days <= 2"
                 :border-width="3"
                 :gradient-colors="['rgba(255,255,255,0)', '#ff2770', 'rgba(255,255,255,0)']"
                 :animation-duration="3"
@@ -37,7 +37,7 @@
             <!-- 中间文字 -->
             <div class="main-page-food-name">{{ food.name }}</div>
             <!-- 右侧剩余天数 -->
-            <div :class="{ 'remaining-days': true, 'remaining-days-red': food.remaining_days <= 2 }">
+            <div :class="{ 'remaining-days': true, 'remaining-days-red': food.remaining_days && food.remaining_days <= 2 }">
               {{ `还剩 ${food.remaining_days} 天` }}
             </div>
           </div>
@@ -85,7 +85,7 @@ const router = useRouter()
 const foodList = ref<FoodItem[]>([])
 const loading = ref(false)
 const finished = ref(false)
-const isLoading = ref<boolean>(false)
+const isLoading = ref(false)
 // 保存被删除的食物项
 const deletedFoods = ref<FoodItem[]>([])
 
