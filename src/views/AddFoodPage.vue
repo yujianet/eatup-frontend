@@ -2,6 +2,8 @@
   <div class="add-food-page">
     <!-- 返回按钮 -->
     <van-button icon="arrow-left" class="back-button" @click="goBack"/>
+    <!-- AI识别按钮 -->
+    <van-button icon="photo" class="ai-button" @click="toggleAIRecognition">{{ aiRecognitionRunning ? '停止识别' : 'AI识别' }}</van-button>
     <!-- 摄像头预览区域 -->
     <div class="camera-preview">
       <video ref="videoRef" class="video-stream" autoplay muted playsinline></video>
@@ -60,7 +62,7 @@ import {computed, onMounted, onUnmounted, ref} from 'vue'
 import {useRouter} from 'vue-router'
 import axios from 'axios'
 import {showToast} from 'vant'
-import type {FoodFormData} from "./types.ts";
+import type {FoodFormData, RecognitionResult} from "./types.ts";
 
 // --- 摄像头逻辑 ---
 const videoRef = ref<HTMLVideoElement | null>(null)
@@ -183,7 +185,7 @@ const onSubmit = async () => {
 
     // 1. 拍照
     const photoBlob = await takePhoto();
-    // 2. 上传图片（模拟）
+    // 2. 上传图片 保存名称
     formData.value.photo_path = await uploadPhoto(photoBlob);
     // 3. 提交数据到后端
     await axios.post('/api/foods/', formData.value);
@@ -232,6 +234,52 @@ const uploadPhoto = async (blob: Blob): Promise<string> => {
   }
 }
 
+// --- AI识别逻辑 ---
+const aiRecognitionRunning = ref(false)
+let recognitionInterval: number | null = null
+
+const toggleAIRecognition = () => {
+  if (aiRecognitionRunning.value) {
+    stopAIRecognition()
+  } else {
+    startAIRecognition()
+  }
+}
+
+const startAIRecognition = () => {
+  aiRecognitionRunning.value = true
+  recognitionInterval = setInterval(async () => {
+    try {
+      const photoBlob = await takePhoto()
+      const response = await axios.post('/api/image-recognition/', {'file': photoBlob}, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      const recognitionResult = ref<RecognitionResult>( {} as RecognitionResult)
+      recognitionResult.value = response.data
+      showToast(`${recognitionResult.value.food_name}(${recognitionResult.value.confidence})`)
+      if (recognitionResult.value.confidence > 0.94) {
+        formData.value.name = recognitionResult.value.food_name
+        formData.value.expiry_days = recognitionResult.value.expiry_days
+        onExpiryDaysChange(recognitionResult.value.expiry_days)
+        stopAIRecognition()
+      }
+    } catch (error) {
+      console.error('AI识别失败:', error)
+    }
+  }, 1000)
+}
+
+const stopAIRecognition = () => {
+  aiRecognitionRunning.value = false
+  if (recognitionInterval) {
+    clearInterval(recognitionInterval)
+    recognitionInterval = null
+  }
+}
+
 // 生命周期
 onMounted(() => {
   initCamera()
@@ -254,6 +302,7 @@ onUnmounted(cleanupCamera)
   border-radius: 16px;
   overflow: hidden;
   margin: 0 auto; /* 居中显示 */
+  margin-bottom: 8px;
 }
 
 .video-stream {
@@ -309,6 +358,15 @@ onUnmounted(cleanupCamera)
   position: absolute;
   top: 12px;
   left: 12px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border: none;
+  z-index: 10;
+}
+
+.ai-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
   background-color: rgba(255, 255, 255, 0.5);
   border: none;
   z-index: 10;

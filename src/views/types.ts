@@ -14,3 +14,9 @@ export interface FoodItem {
     remaining_days: number | null
     storage_time: any | null
 }
+
+export interface RecognitionResult {
+  food_name: string;
+  expiry_days: number;
+  confidence: number;
+}

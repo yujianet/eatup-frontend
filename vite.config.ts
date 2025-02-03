@@ -22,7 +22,7 @@ export default defineConfig({
     allowedHosts: ['eatup-test.i.yujianet.cn', 'eatup.i.yujianet.cn'],
     proxy: {
       '/api': {
-        target: 'http://198.18.9.21:8000',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       }
