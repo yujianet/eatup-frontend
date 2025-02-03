@@ -75,7 +75,7 @@ import { useRouter } from 'vue-router'
 import 'vant/es/floating-bubble/style'
 import axios from 'axios'
 import type { FoodItem } from "../views/types.ts";
-import GlowBox from '../component/GlowBox.vue'
+import GlowBox from '../components/GlowBox.vue'
 
 
 // 路由实例
@@ -85,7 +85,7 @@ const router = useRouter()
 const foodList = ref<FoodItem[]>([])
 const loading = ref(false)
 const finished = ref(false)
-const isLoading = ref(false)
+const isLoading = ref<boolean>(false)
 // 保存被删除的食物项
 const deletedFoods = ref<FoodItem[]>([])
 
