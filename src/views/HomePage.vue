@@ -9,7 +9,7 @@
           finished-text="没有更多了"
           @load="onLoad"
       >
-        <van-swipe-cell v-for="food in foodList" :key="food.id">
+        <van-swipe-cell v-for="food in foodList" :key="food.food_id">
           <div class="food-item">
             <!-- 左侧图片 -->
             <div class="food-image">
@@ -35,14 +35,14 @@
               />
             </div>
             <!-- 中间文字 -->
-            <div class="main-page-food-name">{{ food.name }}</div>
+            <div class="main-page-food-name">{{ food.food_name }}</div>
             <!-- 右侧剩余天数 -->
             <div :class="{ 'remaining-days': true, 'remaining-days-red': food.remaining_days && food.remaining_days <= 2 }">
               {{ `还剩 ${food.remaining_days} 天` }}
             </div>
           </div>
           <template #right>
-            <van-button square text="删除" type="danger" class="delete-button" @click="deleteFood(food.id)" />
+            <van-button square text="删除" type="danger" class="delete-button" @click="deleteFood(food.food_id)" />
           </template>
         </van-swipe-cell>
       </van-list>
@@ -128,11 +128,11 @@ const onRefresh = async () => {
 const deleteFood = async (foodId: number) => {
   try {
     await axios.delete(`/api/foods/${foodId}`)
-    const deletedFood = foodList.value.find(food => food.id === foodId)
+    const deletedFood = foodList.value.find(food => food.food_id === foodId)
     if (deletedFood) {
       deletedFoods.value.push(deletedFood)
     }
-    foodList.value = foodList.value.filter(food => food.id !== foodId)
+    foodList.value = foodList.value.filter(food => food.food_id !== foodId)
     console.log('删除食物成功:', foodId)
   } catch (error) {
     console.error('删除食物失败:', error)
@@ -140,15 +140,15 @@ const deleteFood = async (foodId: number) => {
 }
 
 const undoDeleteButtonOffset = ref({ x: 24, y: -1 })
-// 新增：撤销删除操作
+// 撤销删除操作
 const undoDelete = async () => {
   if (deletedFoods.value.length > 0) {
     const lastDeletedFood = deletedFoods.value.pop()
     if (lastDeletedFood) {
       try {
-        await axios.put(`/api/foods/${lastDeletedFood.id}/undo_delete`)
+        await axios.put(`/api/foods/${lastDeletedFood.food_id}/undo_delete`)
         foodList.value.push(lastDeletedFood)
-        console.log('撤销删除成功:', lastDeletedFood.id)
+        console.log('撤销删除成功:', lastDeletedFood.food_id)
       } catch (error) {
         console.error('撤销删除失败:', error)
         // 如果撤销失败，将食物项重新添加到 deletedFoods 数组中

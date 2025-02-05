@@ -1,14 +1,14 @@
 // src/types.ts
 
 export interface FoodFormData {
-    name: string
+    food_name: string
     expiry_days: number
     photo_path: string
 }
 
 export interface FoodItem {
-    id: number
-    name: string | null
+    food_id: number
+    food_name: string | null
     expiry_days: number | null
     photo_path: string | null
     remaining_days: number | null

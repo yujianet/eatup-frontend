@@ -22,7 +22,7 @@
       <div class="name-and-expiry">
         <div class="food-name">
           <van-field
-              v-model="formData.name"
+              v-model="formData.food_name"
               name="name"
               label="食物名称"
               placeholder="请输入名称"
@@ -177,7 +177,7 @@ const onExpiryDaysChange = (expiry_days: number) => {
 
 // --- 提交表单 ---
 const formData = ref<FoodFormData>({
-  name: '',
+  food_name: '',
   expiry_days: 1,
   photo_path: ''
 })
@@ -315,7 +315,7 @@ const startAIRecognition = async () => {
         }
         
         // 更新表单数据
-        formData.value.name = recognitionResult.value.food_name
+        formData.value.food_name = recognitionResult.value.food_name
         formData.value.expiry_days = recognitionResult.value.expiry_days
         onExpiryDaysChange(recognitionResult.value.expiry_days)
         break
