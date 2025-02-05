@@ -86,6 +86,7 @@ const foodList = ref<FoodItem[]>([])
 const loading = ref(false)
 const finished = ref(false)
 const isLoading = ref(false)
+let listPage = 1
 // 保存被删除的食物项
 const deletedFoods = ref<FoodItem[]>([])
 
@@ -94,10 +95,15 @@ const fetchFoodList = async () => {
     const response = await axios.get(`/api/foods/`, {
       params: {
         sort_by: 'remaining_days',
-        order: 'asc' // 可以根据需要调整为 'desc' 以实现降序排序
+        order: 'asc', // 可以根据需要调整为 'desc' 以实现降序排序
+        page: listPage
       }
     })
     console.log('获取食物列表成功:', response)
+    if (response.data.pagination.total_pages == listPage) {
+      finished.value = true
+    }
+    listPage++
     return response.data.data
   } catch (error) {
     console.error('获取食物列表失败:', error)
@@ -109,7 +115,6 @@ const onLoad = async () => {
   const data = await fetchFoodList()
   foodList.value.push(...data)
   loading.value = false
-  finished.value = true // 假设只有一页数据
 }
 
 const onRefresh = async () => {
