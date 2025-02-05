@@ -7,6 +7,7 @@
     <!-- 摄像头预览区域 -->
     <div class="camera-preview">
       <video ref="videoRef" class="video-stream" autoplay muted playsinline></video>
+      <canvas ref="capturedImageRef" class="captured-image" v-show="showCapturedImage"></canvas>
       <van-overlay :show="!hasCameraPermission" class="overlay">
         <div class="overlay-text">
           <van-icon name="warning" size="24"/>
@@ -66,6 +67,8 @@ import type {FoodFormData, RecognitionResult} from "./types.ts";
 
 // --- 摄像头逻辑 ---
 const videoRef = ref<HTMLVideoElement | null>(null)
+const capturedImageRef = ref<HTMLCanvasElement | null>(null)
+const showCapturedImage = ref(false)
 const hasCameraPermission = ref(true)
 let mediaStream: MediaStream | null = null
 
@@ -202,6 +205,16 @@ const onSubmit = async () => {
 // 拍照功能
 const takePhoto = (): Promise<Blob> => {
   return new Promise((resolve, reject) => {
+    // 如果有固定的画面，使用固定的画面
+    if (showCapturedImage.value && capturedImageRef.value) {
+      capturedImageRef.value.toBlob(blob => {
+        if (blob) resolve(blob)
+        else reject('获取固定画面失败')
+      }, 'image/jpeg')
+      return
+    }
+
+    // 否则使用实时视频画面
     const video = videoRef.value
     if (!video) return reject('摄像头未初始化')
 
@@ -236,7 +249,6 @@ const uploadPhoto = async (blob: Blob): Promise<string> => {
 
 // --- AI识别逻辑 ---
 const aiRecognitionRunning = ref(false)
-let recognitionInterval: number | null = null
 
 const toggleAIRecognition = () => {
   if (aiRecognitionRunning.value) {
@@ -246,38 +258,81 @@ const toggleAIRecognition = () => {
   }
 }
 
-const startAIRecognition = () => {
+// 延迟函数：等待指定的毫秒数
+const delay = (ms: number) => {
+  return new Promise(resolve => {
+    setTimeout(resolve, ms)
+  })
+}
+
+const startAIRecognition = async () => {
+  // 清除固定的画面
+  showCapturedImage.value = false
+  const canvas = capturedImageRef.value
+  if (canvas) {
+    const ctx = canvas.getContext('2d')
+    if (ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+    }
+  }
+
   aiRecognitionRunning.value = true
-  recognitionInterval = setInterval(async () => {
+  
+  // 串行执行识别
+  while (aiRecognitionRunning.value) {
     try {
+      // 1. 拍照
       const photoBlob = await takePhoto()
+      
+      // 2. 发送识别请求
       const response = await axios.post('/api/image-recognition/', {'file': photoBlob}, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
+      // 3. 处理识别结果
       const recognitionResult = ref<RecognitionResult>( {} as RecognitionResult)
       recognitionResult.value = response.data
       showToast(`${recognitionResult.value.food_name}(${recognitionResult.value.confidence})`)
+      
+      // 4. 检查是否识别成功
       if (recognitionResult.value.confidence > 0.94) {
+        // 停止识别循环
+        aiRecognitionRunning.value = false
+        
+        // 将当前画面固定到canvas上
+        const video = videoRef.value
+        const canvas = capturedImageRef.value
+        if (video && canvas) {
+          canvas.width = video.videoWidth
+          canvas.height = video.videoHeight
+          const ctx = canvas.getContext('2d')
+          if (ctx) {
+            ctx.drawImage(video, 0, 0)
+            showCapturedImage.value = true
+          }
+        }
+        
+        // 更新表单数据
         formData.value.name = recognitionResult.value.food_name
         formData.value.expiry_days = recognitionResult.value.expiry_days
         onExpiryDaysChange(recognitionResult.value.expiry_days)
-        stopAIRecognition()
+        break
       }
+      
+      // 5. 等待1秒后继续下一次识别
+      await delay(1000)
     } catch (error) {
       console.error('AI识别失败:', error)
+      // 发生错误时也等待1秒再继续
+      await delay(1000)
     }
-  }, 1000)
+  }
 }
 
 const stopAIRecognition = () => {
   aiRecognitionRunning.value = false
-  if (recognitionInterval) {
-    clearInterval(recognitionInterval)
-    recognitionInterval = null
-  }
 }
 
 // 生命周期
@@ -309,6 +364,16 @@ onUnmounted(cleanupCamera)
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.captured-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 5;
 }
 
 .overlay {
