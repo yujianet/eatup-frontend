@@ -363,8 +363,7 @@ onUnmounted(cleanupCamera)
   max-height: 40vh;
   border-radius: 16px;
   overflow: hidden;
-  margin: 0 auto; /* 居中显示 */
-  margin-bottom: 8px;
+  margin: 0 auto 8px;
 }
 
 .video-stream {
