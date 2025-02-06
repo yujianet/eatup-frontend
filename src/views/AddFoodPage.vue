@@ -2,8 +2,6 @@
   <div class="add-food-page">
     <!-- 返回按钮 -->
     <van-button icon="arrow-left" class="back-button" @click="goBack"/>
-    <!-- AI识别按钮 -->
-    <van-button icon="photo" class="ai-button" @click="toggleAIRecognition">{{ aiRecognitionRunning ? '停止识别' : 'AI识别' }}</van-button>
     <!-- 摄像头预览区域 -->
     <div class="camera-preview">
       <video ref="videoRef" class="video-stream" autoplay muted playsinline></video>
@@ -44,12 +42,21 @@
       <!-- 保存按钮 -->
       <div class="submit-button">
         <van-button
+          round
+          plain
+          icon="scan"
+          color="#7232dd"
+          style="width: 120px; margin: 0 6px"
+        @click="toggleAIRecognition">
+          {{ aiRecognitionRunning ? '停止识别' : 'AI识别' }}
+        </van-button>
+        <van-button
             round
-            block
             type="primary"
             native-type="submit"
             :loading="isSubmitting"
             loading-text="保存中..."
+            style="flex-grow: 1; margin: 0 6px"
         >
           保存
         </van-button>
@@ -145,11 +152,11 @@ const sliderValueToDays = [
   7,   // 7 天
   10,  // 10 天
   14,  // 14 天
-  31,  // 1 个月
-  61,  // 2 个月
-  92,  // 3 个月
-  183, // 6 个月
-  274, // 9 个月
+  30,  // 1 个月
+  60,  // 2 个月
+  90,  // 3 个月
+  180, // 6 个月
+  270, // 9 个月
   365, // 1 年
   548, // 1 年半
   730, // 2 年
@@ -417,6 +424,7 @@ onUnmounted(cleanupCamera)
 
 .submit-button {
   margin-top: 24px;
+  display: flex;
 }
 
 .back-button {
@@ -428,12 +436,4 @@ onUnmounted(cleanupCamera)
   z-index: 10;
 }
 
-.ai-button {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background-color: rgba(255, 255, 255, 0.5);
-  border: none;
-  z-index: 10;
-}
 </style>
