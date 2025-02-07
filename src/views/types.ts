@@ -8,11 +8,12 @@ export interface FoodFormData {
 
 export interface FoodItem {
     food_id: number
-    food_name: string | null
-    expiry_days: number | null
-    photo_path: string | null
-    remaining_days: number | null
-    storage_time: any | null
+    food_name: string
+    expiry_days: number
+    photo_path: string
+    remaining_days: number
+    remaining_level: number
+    storage_time: any
 }
 
 export interface RecognitionResult {

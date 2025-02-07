@@ -10,34 +10,21 @@
           @load="onLoad"
       >
         <van-swipe-cell v-for="food in foodList" :key="food.food_id">
-          <div class="food-item">
+          <div class="food-item" :class="{'food-item-red': food.remaining_level <=0 }">
             <!-- 左侧图片 -->
-            <div class="food-image">
-              <GlowBox v-if="food.remaining_days && food.remaining_days <= 2"
-                :border-width="3"
-                :gradient-colors="['rgba(255,255,255,0)', '#ff2770', 'rgba(255,255,255,0)']"
-                :animation-duration="3"
-              >
-                <van-image
-                width="160"
-                height="120"
-                :src="'/api' + food.photo_path"
-                fit="cover"
-                radius="8px"
-                />
-              </GlowBox>
-              <van-image v-else
+              <van-image class="food-image"
                 width="160"
                 height="120"
                 :src="'/api' + food.photo_path"
                 fit="cover"
                 radius="8px"
               />
-            </div>
             <!-- 中间文字 -->
             <div class="main-page-food-name">{{ food.food_name }}</div>
             <!-- 右侧剩余天数 -->
-            <div :class="{ 'remaining-days': true, 'remaining-days-red': food.remaining_days && food.remaining_days <= 2 }">
+            <div
+                class="remaining-days"
+                :class="{ 'remaining-days-red': food.remaining_level <= 1 }">
               {{ `还剩 ${food.remaining_days} 天` }}
             </div>
           </div>
@@ -75,7 +62,6 @@ import { useRouter } from 'vue-router'
 import 'vant/es/floating-bubble/style'
 import axios from 'axios'
 import type { FoodItem } from "../views/types.ts";
-import GlowBox from '../components/GlowBox.vue'
 
 
 // 路由实例
@@ -178,16 +164,19 @@ const undoDelete = async () => {
   margin-left: 10px;
   padding: 5px 10px;
   background-color: rgba(255, 255, 255, 0.8);
-  border: 1px solid #517451;
+  border: 1px solid darkgreen;
   border-radius: 8px;
-  color: #517451;
+  color: darkgreen;
   font-size: 16px;
 }
 
 .remaining-days-red {
-  color: red;
-  border-color: red;
+  color: #ffffff !important;
+  background-color: orangered !important;
+  border-color: orangered !important;
 }
+
+
 
 .add-button {
   --van-floating-bubble-size: 56px;
@@ -208,5 +197,20 @@ const undoDelete = async () => {
   display: flex;
   align-items: center;
   gap: 12px;
+
+}
+
+/* 定义关键帧动画 */
+@keyframes fadeInOut {
+  0%, 20%, 80%, 100% {
+    background-color: rgba(255, 0, 0, 0); /* 起始和结尾透明 */
+  }
+  50% {
+    background-color: #f8b6b6; /* 中间颜色（红色） */
+  }
+}
+
+.food-item-red {
+  animation: fadeInOut 2s infinite; /* 动画名称、持续时间、无限循环 */
 }
 </style>
