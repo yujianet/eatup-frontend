@@ -72,7 +72,6 @@ const foodList = ref<FoodItem[]>([])
 const loading = ref(false)
 const finished = ref(false)
 const isLoading = ref(false)
-let listPage = 1
 // 保存被删除的食物项及其位置
 const deletedFoodsWithIndex = ref<{ food: FoodItem, index: number }[]>([])
 
@@ -82,14 +81,14 @@ const fetchFoodList = async () => {
       params: {
         sort_by: 'remaining_days',
         order: 'asc', // 可以根据需要调整为 'desc' 以实现降序排序
-        page: listPage
+        offset: foodList.value.length,
+        limit: 10
       }
     })
     console.log('获取食物列表成功:', response)
-    if (response.data.pagination.total_pages == listPage) {
+    if (response.data.pagination.total <= foodList.value.length + 10) {
       finished.value = true
     }
-    listPage++
     return response.data.data
   } catch (error) {
     console.error('获取食物列表失败:', error)
