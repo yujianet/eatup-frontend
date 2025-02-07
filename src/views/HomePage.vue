@@ -41,7 +41,7 @@
         axis="lock"
         @click="undoDelete"
         class="undo-button"
-        :style="{ visibility: deletedFoods.length > 0 ? 'visible' : 'hidden' }">
+        :style="{ visibility: deletedFoodsWithIndex.length > 0 ? 'visible' : 'hidden' }">
       <van-icon name="revoke" size="24" />
     </van-floating-bubble>
 
@@ -73,8 +73,8 @@ const loading = ref(false)
 const finished = ref(false)
 const isLoading = ref(false)
 let listPage = 1
-// 保存被删除的食物项
-const deletedFoods = ref<FoodItem[]>([])
+// 保存被删除的食物项及其位置
+const deletedFoodsWithIndex = ref<{ food: FoodItem, index: number }[]>([])
 
 const fetchFoodList = async () => {
   try {
@@ -110,13 +110,14 @@ const onRefresh = async () => {
   isLoading.value = false
 }
 
-// 删除食物时将食物项添加到 deletedFoods 数组中
+// 删除食物时将食物项及其位置添加到 deletedFoodsWithIndex 数组中
 const deleteFood = async (foodId: number) => {
   try {
     await axios.delete(`/api/foods/${foodId}`)
-    const deletedFood = foodList.value.find(food => food.food_id === foodId)
+    const foodIndex = foodList.value.findIndex(food => food.food_id === foodId)
+    const deletedFood = foodList.value[foodIndex]
     if (deletedFood) {
-      deletedFoods.value.push(deletedFood)
+      deletedFoodsWithIndex.value.push({ food: deletedFood, index: foodIndex })
     }
     foodList.value = foodList.value.filter(food => food.food_id !== foodId)
     console.log('删除食物成功:', foodId)
@@ -128,21 +129,23 @@ const deleteFood = async (foodId: number) => {
 const undoDeleteButtonOffset = ref({ x: 24, y: -1 })
 // 撤销删除操作
 const undoDelete = async () => {
-  if (deletedFoods.value.length > 0) {
-    const lastDeletedFood = deletedFoods.value.pop()
-    if (lastDeletedFood) {
+  if (deletedFoodsWithIndex.value.length > 0) {
+    const lastDeletedFoodWithIndex = deletedFoodsWithIndex.value.pop()
+    if (lastDeletedFoodWithIndex) {
       try {
-        await axios.put(`/api/foods/${lastDeletedFood.food_id}/undo_delete`)
-        foodList.value.push(lastDeletedFood)
-        console.log('撤销删除成功:', lastDeletedFood.food_id)
+        await axios.put(`/api/foods/${lastDeletedFoodWithIndex.food.food_id}/undo_delete`)
+        // 根据记录的位置将食物放回到原来的位置
+        foodList.value.splice(lastDeletedFoodWithIndex.index, 0, lastDeletedFoodWithIndex.food)
+        console.log('撤销删除成功:', lastDeletedFoodWithIndex.food.food_id)
       } catch (error) {
         console.error('撤销删除失败:', error)
-        // 如果撤销失败，将食物项重新添加到 deletedFoods 数组中
-        deletedFoods.value.push(lastDeletedFood)
+        // 如果撤销失败，将食物项及其位置重新添加到 deletedFoodsWithIndex 数组中
+        deletedFoodsWithIndex.value.push(lastDeletedFoodWithIndex)
       }
     }
   }
 }
+
 </script>
 
 <style scoped>
